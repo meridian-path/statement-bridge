@@ -19,9 +19,15 @@ function parseAmountUnsigned(token) {
 }
 
 /**
- * @param {{ bankName: string, signatureRe: RegExp, sectionHeaders: { name: string, sign: 1|-1 }[] }} config
+ * @param {{ bankName: string, signatureRe: RegExp, sectionHeaders: { name: string, sign: 1|-1 }[], hasTrailingBalance?: boolean }} config
+ * `hasTrailingBalance`: some banks in this family (Wells Fargo) print a running daily balance
+ * as a second number after the transaction amount on the same line - when set, the
+ * second-to-last amount-shaped token on the line is treated as the transaction amount and the
+ * last is treated as the balance, the same convention src/parsers/generic.js already uses.
+ * Without it (Chase, Bank of America), a line carries exactly one amount-shaped number and the
+ * last token found is that amount.
  */
-export function makeSectionedBankParser({ bankName, signatureRe, sectionHeaders }) {
+export function makeSectionedBankParser({ bankName, signatureRe, sectionHeaders, hasTrailingBalance = false }) {
   function looksLikeMatch(text) {
     if (!signatureRe.test(text)) return false;
     const upper = text.toUpperCase();
@@ -63,7 +69,10 @@ export function makeSectionedBankParser({ bankName, signatureRe, sectionHeaders 
         continue;
       }
 
-      const amountToken = amountTokens[amountTokens.length - 1];
+      const amountToken =
+        hasTrailingBalance && amountTokens.length >= 2
+          ? amountTokens[amountTokens.length - 2]
+          : amountTokens[amountTokens.length - 1];
       const unsignedAmount = parseAmountUnsigned(amountToken);
       if (unsignedAmount === null) {
         skipped.push(line);
