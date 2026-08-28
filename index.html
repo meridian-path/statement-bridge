@@ -15,11 +15,12 @@
       is never uploaded anywhere.
     </p>
     <p class="scope-note">
-      <strong>Early version.</strong> This uses a generic parser that looks for a common
-      date / description / amount layout - it does not yet know every bank's exact format,
-      and it does not yet export QBO or Xero files (CSV only for now). Always check the
-      results below against your original statement before using them anywhere. This tool
-      does not give tax or accounting advice.
+      <strong>Early version.</strong> This recognizes Chase and Bank of America statements
+      directly, with a generic date / description / amount parser as a fallback for anything
+      else - it does not yet know every bank's exact format. Export to CSV, QBO
+      (QuickBooks), or Xero's CSV format. Always check the results below against your
+      original statement before using them anywhere. This tool does not give tax or
+      accounting advice.
     </p>
 
     <div id="dropzone" class="dropzone">
@@ -49,7 +50,17 @@
         <input type="checkbox" id="confirm-reviewed">
         I've checked these rows against my original statement
       </label>
-      <button id="export-csv" type="button" disabled>Export CSV</button>
+      <div class="export-controls">
+        <label class="export-format-label">
+          Export format
+          <select id="export-format">
+            <option value="csv">CSV</option>
+            <option value="qbo">QBO (QuickBooks)</option>
+            <option value="xero">Xero CSV</option>
+          </select>
+        </label>
+        <button id="export-btn" type="button" disabled>Export</button>
+      </div>
     </section>
   </main>
   <script type="module" src="/src/main.js"></script>

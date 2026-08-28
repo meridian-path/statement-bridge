@@ -1,6 +1,26 @@
 import { extractTextFromPdf } from './pdf/extractText.js';
-import { parseGenericStatement } from './parsers/generic.js';
+import { parseStatement } from './parsers/index.js';
 import { transactionsToCsv } from './export/csv.js';
+import { transactionsToXeroCsv } from './export/xeroCsv.js';
+import { transactionsToQbo } from './export/qbo.js';
+
+const EXPORT_FORMATS = {
+  csv: {
+    extension: 'csv',
+    mimeType: 'text/csv;charset=utf-8;',
+    build: (transactions) => transactionsToCsv(transactions),
+  },
+  xero: {
+    extension: 'csv',
+    mimeType: 'text/csv;charset=utf-8;',
+    build: (transactions) => transactionsToXeroCsv(transactions),
+  },
+  qbo: {
+    extension: 'qbo',
+    mimeType: 'application/vnd.intu.qbo',
+    build: (transactions) => transactionsToQbo(transactions),
+  },
+};
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('file-input');
@@ -9,7 +29,8 @@ const reviewSection = document.getElementById('review');
 const reviewTbody = document.getElementById('review-tbody');
 const skippedNote = document.getElementById('skipped-note');
 const confirmCheckbox = document.getElementById('confirm-reviewed');
-const exportButton = document.getElementById('export-csv');
+const exportFormatSelect = document.getElementById('export-format');
+const exportButton = document.getElementById('export-btn');
 
 let currentTransactions = [];
 let currentSkipped = [];
@@ -71,12 +92,13 @@ confirmCheckbox.addEventListener('change', () => {
 });
 
 exportButton.addEventListener('click', () => {
-  const csv = transactionsToCsv(currentTransactions);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const format = EXPORT_FORMATS[exportFormatSelect.value] || EXPORT_FORMATS.csv;
+  const content = format.build(currentTransactions);
+  const blob = new Blob([content], { type: format.mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${sourceFileName}.csv`;
+  link.download = `${sourceFileName}.${format.extension}`;
   link.click();
   URL.revokeObjectURL(url);
 });
@@ -97,7 +119,7 @@ async function handleFile(file) {
   try {
     const buffer = await file.arrayBuffer();
     const text = await extractTextFromPdf(buffer);
-    const { transactions, skipped } = parseGenericStatement(text);
+    const { transactions, skipped, matchedBank } = parseStatement(text);
 
     currentTransactions = transactions;
     currentSkipped = skipped;
@@ -112,7 +134,10 @@ async function handleFile(file) {
       return;
     }
 
-    setStatus(`Found ${transactions.length} transaction(s). Review them below before exporting.`);
+    const bankNote = matchedBank ? ` using the ${matchedBank} layout` : '';
+    setStatus(
+      `Found ${transactions.length} transaction(s)${bankNote}. Review them below before exporting.`
+    );
     renderReview();
   } catch (err) {
     console.error(err);
