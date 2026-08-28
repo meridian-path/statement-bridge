@@ -1,0 +1,11 @@
+{
+  "name": "statement-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bank statement PDF to CSV/QBO/Xero converter. Planned to run entirely client-side, no upload, no account. Scaffold only, no conversion logic yet.",
+  "scripts": {},
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}
