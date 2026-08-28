@@ -2,8 +2,21 @@
   "name": "statement-bridge",
   "version": "0.1.0",
   "private": true,
-  "description": "Bank statement PDF to CSV/QBO/Xero converter. Planned to run entirely client-side, no upload, no account. Scaffold only, no conversion logic yet.",
-  "scripts": {},
+  "description": "Bank statement PDF to CSV/QBO/Xero converter. Runs entirely client-side, no upload, no account. MVP: generic-fallback parser + CSV export only; per-bank parsers and QBO/Xero export are not built yet.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^4.7.76"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  },
   "engines": {
     "node": ">=18"
   },

@@ -3,32 +3,55 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Statement Bridge - coming soon</title>
-  <meta name="description" content="A planned tool for converting bank statement PDFs into CSV, QBO, and Xero-ready files, entirely in your browser. Not built yet.">
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      max-width: 40rem;
-      margin: 4rem auto;
-      padding: 0 1.5rem;
-      line-height: 1.5;
-      color: #1a1a1a;
-    }
-    h1 {
-      font-size: 1.75rem;
-    }
-    p {
-      color: #333;
-    }
-  </style>
+  <title>Statement Bridge</title>
+  <meta name="description" content="Convert a bank statement PDF into a CSV file, entirely in your browser. No upload, no account.">
+  <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
   <main>
     <h1>Statement Bridge</h1>
-    <p>This tool will convert bank statement PDFs into CSV, QBO, and Xero-ready files,
-    entirely in your browser - no upload, no account.</p>
-    <p><strong>Nothing is built yet.</strong> This page is a placeholder for a project that
-    hasn't started real development.</p>
+    <p class="tagline">
+      Convert a bank statement PDF into a CSV file - entirely in your browser. Your statement
+      is never uploaded anywhere.
+    </p>
+    <p class="scope-note">
+      <strong>Early version.</strong> This uses a generic parser that looks for a common
+      date / description / amount layout - it does not yet know every bank's exact format,
+      and it does not yet export QBO or Xero files (CSV only for now). Always check the
+      results below against your original statement before using them anywhere. This tool
+      does not give tax or accounting advice.
+    </p>
+
+    <div id="dropzone" class="dropzone">
+      <p>Drop a bank statement PDF here, or</p>
+      <label class="file-label">
+        Choose a file
+        <input type="file" id="file-input" accept="application/pdf" hidden>
+      </label>
+    </div>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <section id="review" class="review" hidden>
+      <h2>Review before export</h2>
+      <p>Check every row against your original statement. Edit anything that looks wrong, or
+        remove a row entirely, before exporting.</p>
+      <div class="table-scroll">
+        <table id="review-table">
+          <thead>
+            <tr><th>Date</th><th>Description</th><th>Amount</th><th></th></tr>
+          </thead>
+          <tbody id="review-tbody"></tbody>
+        </table>
+      </div>
+      <p id="skipped-note" class="skipped-note" hidden></p>
+      <label class="confirm-label">
+        <input type="checkbox" id="confirm-reviewed">
+        I've checked these rows against my original statement
+      </label>
+      <button id="export-csv" type="button" disabled>Export CSV</button>
+    </section>
   </main>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
