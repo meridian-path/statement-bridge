@@ -1,5 +1,5 @@
 import { extractTextFromPdf } from './pdf/extractText.js';
-import { parseGenericStatement } from './parsers/generic.js';
+import { parseStatement } from './parsers/index.js';
 import { transactionsToCsv } from './export/csv.js';
 
 const dropzone = document.getElementById('dropzone');
@@ -97,7 +97,7 @@ async function handleFile(file) {
   try {
     const buffer = await file.arrayBuffer();
     const text = await extractTextFromPdf(buffer);
-    const { transactions, skipped } = parseGenericStatement(text);
+    const { transactions, skipped, matchedBank } = parseStatement(text);
 
     currentTransactions = transactions;
     currentSkipped = skipped;
@@ -112,7 +112,10 @@ async function handleFile(file) {
       return;
     }
 
-    setStatus(`Found ${transactions.length} transaction(s). Review them below before exporting.`);
+    const bankNote = matchedBank ? ` using the ${matchedBank} layout` : '';
+    setStatus(
+      `Found ${transactions.length} transaction(s)${bankNote}. Review them below before exporting.`
+    );
     renderReview();
   } catch (err) {
     console.error(err);
