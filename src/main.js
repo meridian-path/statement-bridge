@@ -24,6 +24,7 @@ const EXPORT_FORMATS = {
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('file-input');
+const trySampleButton = document.getElementById('try-sample-btn');
 const statusEl = document.getElementById('status');
 const reviewSection = document.getElementById('review');
 const reviewTbody = document.getElementById('review-tbody');
@@ -149,6 +150,23 @@ async function handleFile(file) {
 }
 
 fileInput.addEventListener('change', (event) => handleFile(event.target.files[0]));
+
+trySampleButton.addEventListener('click', async () => {
+  trySampleButton.disabled = true;
+  setStatus('Loading sample statement...');
+  try {
+    const response = await fetch('/sample-statement.pdf');
+    if (!response.ok) throw new Error(`sample fetch failed: ${response.status}`);
+    const blob = await response.blob();
+    const sampleFile = new File([blob], 'sample-statement.pdf', { type: 'application/pdf' });
+    await handleFile(sampleFile);
+  } catch (err) {
+    console.error(err);
+    setStatus('Could not load the sample statement. Try choosing your own file instead.', true);
+  } finally {
+    trySampleButton.disabled = false;
+  }
+});
 
 ['dragenter', 'dragover'].forEach((eventName) => {
   dropzone.addEventListener(eventName, (event) => {
