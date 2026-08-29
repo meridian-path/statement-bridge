@@ -10,7 +10,7 @@ DATE DESCRIPTION AMOUNT
 
 const BOA_SAMPLE = `
 Bank of America, N.A.
-Deposits and other credits
+Deposits and other additions
 Date Description Amount
 01/04 Direct Deposit - EMPLOYER INC 1,800.00
 `;

@@ -1,11 +1,21 @@
 // Shared logic for a family of bank statement layouts (Chase, Bank of America, and likely
 // others in this same family) that group transactions under printed section headers -
-// "Deposits and other credits", "Withdrawals and other debits", and similar - and print each
-// transaction's amount WITHOUT a leading minus sign. The sign of a withdrawal is implied by
-// which section it's printed under, never by the amount text itself. This is exactly the case
-// the generic fallback parser (src/parsers/generic.js) cannot handle: it requires an explicit
-// "-" or parenthesized amount to recognize a negative transaction, so every withdrawal line in
-// this family of statements would otherwise import as a (wrong) positive amount.
+// "Deposits and other credits", "Withdrawals and other debits", and similar - and determine a
+// transaction's sign from which section it's printed under, never from the amount text itself
+// (this is exactly the case the generic fallback parser, src/parsers/generic.js, cannot handle:
+// it requires an explicit "-" or parenthesized amount to recognize a negative transaction, so
+// every withdrawal line in this family of statements would otherwise import as a (wrong)
+// positive amount there).
+//
+// Some statements in this family (confirmed via a real hands-on browser check against Bank of
+// America's own official "How to read your statement" guide, not assumed) additionally print a
+// redundant, explicit "-" directly before a debit amount even though the section itself already
+// implies the sign - e.g. "07/20 Exxon 29203 Salem #000860306 - 46.32". That standalone "-"
+// token isn't part of AMOUNT_RE's own match (deliberately - see above, this family's sign comes
+// from the section, not the amount text), so left unhandled it lands as trailing junk on the
+// parsed description instead ("...Salem #000860306 -"). Stripped explicitly below rather than
+// left in, since a dangling "-" in every exported description row would look broken to a user
+// checking their statement.
 //
 // A bank module built on this factory supplies its own detection signature and its own exact
 // section header text/sign pairs; this module owns the shared column-parsing logic once.
@@ -80,7 +90,11 @@ export function makeSectionedBankParser({ bankName, signatureRe, sectionHeaders,
       }
 
       const firstAmountIndex = rest.indexOf(amountTokens[0]);
-      const description = rest.slice(0, firstAmountIndex).trim().replace(/\s{2,}/g, ' ');
+      const description = rest
+        .slice(0, firstAmountIndex)
+        .trim()
+        .replace(/\s{2,}/g, ' ')
+        .replace(/\s-$/, '');
 
       transactions.push({ date, description, amount: unsignedAmount * currentSign });
     }
