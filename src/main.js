@@ -4,16 +4,28 @@ import { transactionsToCsv } from './export/csv.js';
 import { transactionsToXeroCsv } from './export/xeroCsv.js';
 import { transactionsToQbo } from './export/qbo.js';
 
+// `bom: true` on a format prepends a UTF-8 byte-order-mark (the 3 bytes EF BB BF, written here
+// as the single character U+FEFF) to the exported file. Excel's own CSV-opening behavior - the
+// common case is a user double-clicking the downloaded file - does not reliably detect UTF-8
+// without one: it commonly falls back to a locale-default codepage (e.g. Windows-1252 on US
+// English Windows) instead, garbling any non-ASCII character in a transaction description (an
+// accented merchant name, a currency symbol, etc.) that a real bank statement can genuinely
+// contain. Deliberately NOT set on qbo: that format's own OFX/SGML header explicitly declares
+// `CHARSET:1252` (see qbo.js) - prepending a UTF-8 BOM there would contradict that declared
+// encoding and risk breaking QuickBooks' own parsing, a separate concern from Excel's CSV-only
+// BOM-detection behavior.
 const EXPORT_FORMATS = {
   csv: {
     extension: 'csv',
     mimeType: 'text/csv;charset=utf-8;',
     build: (transactions) => transactionsToCsv(transactions),
+    bom: true,
   },
   xero: {
     extension: 'csv',
     mimeType: 'text/csv;charset=utf-8;',
     build: (transactions) => transactionsToXeroCsv(transactions),
+    bom: true,
   },
   qbo: {
     extension: 'qbo',
@@ -95,7 +107,7 @@ confirmCheckbox.addEventListener('change', () => {
 exportButton.addEventListener('click', () => {
   const format = EXPORT_FORMATS[exportFormatSelect.value] || EXPORT_FORMATS.csv;
   const content = format.build(currentTransactions);
-  const blob = new Blob([content], { type: format.mimeType });
+  const blob = new Blob([format.bom ? '\uFEFF' + content : content], { type: format.mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
