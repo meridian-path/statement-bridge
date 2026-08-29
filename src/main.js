@@ -4,7 +4,7 @@ import { transactionsToCsv } from './export/csv.js';
 import { transactionsToXeroCsv } from './export/xeroCsv.js';
 import { transactionsToQbo } from './export/qbo.js';
 import { validateAmount } from './reviewValidation.js';
-import { formatCurrencyDisplay, computeTotals } from './reviewFormatting.js';
+import { formatCurrencyDisplay, computeTotals, buildFieldLabel, buildRemoveLabel } from './reviewFormatting.js';
 
 // `bom: true` on a format prepends a UTF-8 byte-order-mark (the 3 bytes EF BB BF, written here
 // as the single character U+FEFF) to the exported file. Excel's own CSV-opening behavior - the
@@ -97,15 +97,25 @@ function renderReview() {
 
   currentTransactions.forEach((tx, index) => {
     const row = document.createElement('tr');
+    // Computed once from this row's own values at render time - a screen reader user tabbing
+    // through the table previously heard "edit text" 69+ times (3 fields x 23 rows on a real
+    // statement) with no indication of which field or which transaction; a bare "Remove"
+    // repeated 23 times had the same problem one level up. Deliberately NOT re-derived on every
+    // edit, so the label a screen reader already announced doesn't shift mid-edit just because
+    // the field's own value is changing.
+    const dateLabel = escapeAttr(buildFieldLabel('Date', tx));
+    const descriptionLabel = escapeAttr(buildFieldLabel('Description', tx));
+    const amountLabel = escapeAttr(buildFieldLabel('Amount', tx));
+    const removeLabel = escapeAttr(buildRemoveLabel(index, tx));
     row.innerHTML = `
-      <td><input type="text" data-field="date" value="${escapeAttr(tx.date)}"></td>
-      <td><input type="text" data-field="description" value="${escapeAttr(tx.description)}"></td>
+      <td><input type="text" data-field="date" value="${escapeAttr(tx.date)}" aria-label="${dateLabel}"></td>
+      <td><input type="text" data-field="description" value="${escapeAttr(tx.description)}" aria-label="${descriptionLabel}"></td>
       <td>
-        <input type="number" step="0.01" data-field="amount" value="${tx.amount}">
+        <input type="number" step="0.01" data-field="amount" value="${tx.amount}" aria-label="${amountLabel}">
         <span class="field-error" hidden>Enter a number</span>
         <span class="amount-preview"></span>
       </td>
-      <td><button type="button" data-action="remove">Remove</button></td>
+      <td><button type="button" data-action="remove" aria-label="${removeLabel}">Remove</button></td>
     `;
 
     // Mirrors currentTransactions[index].amount (the last known VALID amount) formatted the
