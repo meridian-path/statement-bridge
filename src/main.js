@@ -4,6 +4,7 @@ import { transactionsToCsv } from './export/csv.js';
 import { transactionsToXeroCsv } from './export/xeroCsv.js';
 import { transactionsToQbo } from './export/qbo.js';
 import { validateAmount } from './reviewValidation.js';
+import { formatCurrencyDisplay, computeTotals } from './reviewFormatting.js';
 
 // `bom: true` on a format prepends a UTF-8 byte-order-mark (the 3 bytes EF BB BF, written here
 // as the single character U+FEFF) to the exported file. Excel's own CSV-opening behavior - the
@@ -42,6 +43,9 @@ const statusEl = document.getElementById('status');
 const reviewSection = document.getElementById('review');
 const reviewTbody = document.getElementById('review-tbody');
 const skippedNote = document.getElementById('skipped-note');
+const skippedSummary = document.getElementById('skipped-summary');
+const skippedList = document.getElementById('skipped-list');
+const totalsLine = document.getElementById('totals-line');
 const amountWarning = document.getElementById('amount-warning');
 const confirmCheckbox = document.getElementById('confirm-reviewed');
 const exportFormatSelect = document.getElementById('export-format');
@@ -68,6 +72,20 @@ function updateExportButtonState() {
   exportButton.disabled = !confirmCheckbox.checked || currentTransactions.length === 0 || anyInvalidAmount;
 }
 
+function updateTotalsLine() {
+  if (currentTransactions.length === 0) {
+    totalsLine.hidden = true;
+    return;
+  }
+  const { count, net, deposits, withdrawals } = computeTotals(currentTransactions);
+  totalsLine.hidden = false;
+  // deposits is always >= 0 by construction (computeTotals routes every non-negative amount
+  // there), so a literal "+" prefix is always correct and never doubles up with a real sign.
+  totalsLine.textContent =
+    `${count} row${count === 1 ? '' : 's'}, net ${formatCurrencyDisplay(net)}, ` +
+    `deposits +${formatCurrencyDisplay(deposits)}, withdrawals ${formatCurrencyDisplay(withdrawals)}`;
+}
+
 function renderReview() {
   reviewTbody.innerHTML = '';
 
@@ -79,9 +97,21 @@ function renderReview() {
       <td>
         <input type="number" step="0.01" data-field="amount" value="${tx.amount}">
         <span class="field-error" hidden>Enter a number</span>
+        <span class="amount-preview"></span>
       </td>
       <td><button type="button" data-action="remove">Remove</button></td>
     `;
+
+    // Mirrors currentTransactions[index].amount (the last known VALID amount) formatted the
+    // way the source statement itself prints it - stays in sync with what will actually be
+    // exported, including while the input is transiently invalid mid-edit.
+    function updateAmountPreview() {
+      const previewSpan = row.querySelector('.amount-preview');
+      const amount = currentTransactions[index].amount;
+      previewSpan.textContent = formatCurrencyDisplay(amount);
+      previewSpan.classList.toggle('amount-credit', amount > 0);
+    }
+    updateAmountPreview();
 
     row.querySelectorAll('input[data-field]').forEach((input) => {
       input.addEventListener('input', () => {
@@ -100,6 +130,7 @@ function renderReview() {
           if (valid) {
             currentTransactions[index].amount = parseFloat(input.value);
           }
+          updateAmountPreview();
         } else {
           currentTransactions[index][field] = input.value;
         }
@@ -109,6 +140,7 @@ function renderReview() {
           confirmCheckbox.checked = false;
         }
         updateExportButtonState();
+        updateTotalsLine();
       });
     });
 
@@ -122,9 +154,17 @@ function renderReview() {
 
   if (currentSkipped.length > 0) {
     skippedNote.hidden = false;
-    const preview = currentSkipped.slice(0, 5).join(' | ');
-    const more = currentSkipped.length > 5 ? ' ...' : '';
-    skippedNote.textContent = `${currentSkipped.length} line(s) had a date but no amount this parser recognized - check your original statement for anything missing: ${preview}${more}`;
+    skippedNote.open = false;
+    const count = currentSkipped.length;
+    skippedSummary.textContent =
+      `${count} line${count === 1 ? '' : 's'} had a date but no amount this parser recognized ` +
+      '(click to view) - check against your original statement for anything genuinely missing.';
+    skippedList.innerHTML = '';
+    currentSkipped.forEach((line) => {
+      const li = document.createElement('li');
+      li.textContent = line;
+      skippedList.appendChild(li);
+    });
   } else {
     skippedNote.hidden = true;
   }
@@ -132,6 +172,7 @@ function renderReview() {
   reviewSection.hidden = currentTransactions.length === 0;
   confirmCheckbox.checked = false;
   updateExportButtonState();
+  updateTotalsLine();
 }
 
 confirmCheckbox.addEventListener('change', updateExportButtonState);
