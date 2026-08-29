@@ -236,17 +236,18 @@ async function handleFile(file) {
 
     if (transactions.length === 0) {
       setStatus(
-        "Couldn't find any transaction-shaped lines in this PDF. This early version only " +
-          "understands a generic date / description / amount layout, and can't read a " +
-          'scanned/image-only PDF - it may not recognize your bank\'s format yet.',
+        "Couldn't find any transaction-shaped lines in this PDF.\n" +
+          "Likeliest reasons: it's a scanned or image-only PDF (not supported in this early " +
+          "version), or this bank's exact statement format isn't recognized yet.",
         true
       );
       return;
     }
 
     const bankNote = matchedBank ? ` using the ${matchedBank} layout` : '';
+    const txCount = transactions.length;
     setStatus(
-      `Found ${transactions.length} transaction(s)${bankNote}. Review them below before exporting.`
+      `Found ${txCount} transaction${txCount === 1 ? '' : 's'}${bankNote}. Review them below before exporting.`
     );
     renderReview();
   } catch (err) {

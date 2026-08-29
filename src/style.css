@@ -105,6 +105,10 @@ p {
 .status {
   min-height: 1.5rem;
   font-weight: 600;
+  /* Lets an embedded "\n" in a status message (e.g. the zero-transactions error's "what
+     happened" / "likeliest reasons" split) render as a real visual line break - textContent
+     alone collapses newlines to a space under the default white-space handling. */
+  white-space: pre-line;
 }
 
 .status-error {
