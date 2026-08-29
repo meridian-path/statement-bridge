@@ -143,6 +143,16 @@ p {
   outline-offset: -1px;
 }
 
+/* :not([hidden]) matters: an unscoped `display: block` here would outrank the browser's own
+   `[hidden] { display: none }` rule and defeat `span.hidden = true`, showing every row's error
+   text regardless of validity - a real bug this exact wording caught during live verification. */
+#review-table .field-error:not([hidden]) {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--danger);
+}
+
 .skipped-note {
   font-size: 0.88rem;
   color: var(--danger);
