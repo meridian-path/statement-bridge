@@ -45,18 +45,28 @@
         remove a row entirely, before exporting.</p>
       <div class="table-scroll">
         <table id="review-table">
+          <colgroup>
+            <col class="col-date">
+            <col class="col-description">
+            <col class="col-amount">
+            <col class="col-actions">
+          </colgroup>
           <thead>
             <tr><th>Date</th><th>Description</th><th>Amount</th><th></th></tr>
           </thead>
           <tbody id="review-tbody"></tbody>
         </table>
       </div>
-      <p id="skipped-note" class="skipped-note" hidden></p>
+      <details id="skipped-note" class="skipped-note" hidden>
+        <summary id="skipped-summary"></summary>
+        <ul id="skipped-list"></ul>
+      </details>
+      <p id="totals-line" class="totals-line" hidden></p>
       <label class="confirm-label">
         <input type="checkbox" id="confirm-reviewed">
         I've checked these rows against my original statement
       </label>
-      <p id="amount-warning" class="skipped-note" role="status" hidden>
+      <p id="amount-warning" class="warning-note" role="status" hidden>
         One or more Amount fields above are empty or not a valid number - fix them before
         exporting, so a real transaction doesn't silently export as $0.
       </p>

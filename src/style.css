@@ -117,9 +117,20 @@ p {
 
 #review-table {
   width: 100%;
+  min-width: 32rem;
   border-collapse: collapse;
   margin-top: 1rem;
+  table-layout: fixed;
 }
+
+/* Description gets the lion's share of the row - it's free text of unpredictable length,
+   while Date and Amount are both short, predictable-width values. Without this, the three
+   data columns default to roughly equal width and Description truncates even on a wide
+   desktop viewport, actively fighting the row-by-row reconciliation this table exists for. */
+.col-date { width: 18%; }
+.col-description { width: 46%; }
+.col-amount { width: 24%; }
+.col-actions { width: 12%; }
 
 #review-table th,
 #review-table td {
@@ -137,10 +148,37 @@ p {
   font: inherit;
 }
 
+#review-table input[type="number"] {
+  text-align: right;
+}
+
 #review-table input.amount-invalid {
   border-color: var(--danger);
   outline: 1px solid var(--danger);
   outline-offset: -1px;
+}
+
+/* A read-only preview shown alongside the editable Amount input, formatted the way the
+   source statement itself prints amounts ($1,850.00 / -$84.32) - the raw number an <input
+   type="number"> can hold ("1850", "-84.32") costs the reader a mental conversion on every
+   single row when comparing against a real statement. Sign is still the primary, accessible
+   distinction between money in and money out (color is never the only signal); the credit
+   color is a secondary visual cue layered on top, reusing the existing brand accent rather
+   than introducing a new token, and deliberately not reusing --danger for debits - a debit is
+   an ordinary transaction, not an error state, and this app already uses --danger to mean
+   "something needs your attention." */
+#review-table .amount-preview {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+#review-table .amount-preview.amount-credit {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* :not([hidden]) matters: an unscoped `display: block` here would outrank the browser's own
@@ -153,9 +191,44 @@ p {
   color: var(--danger);
 }
 
+/* Skipped lines are demoted to a neutral, collapsed-by-default disclosure rather than a
+   permanent red alarm - a document header/footer/period line the parser correctly declined
+   to treat as a transaction is not itself a problem, and presenting every skipped line as an
+   equally alarming red warning trains a reader to stop taking the one warning that matters
+   seriously. Nothing is filtered out or hidden here, only its visual severity: every skipped
+   line is still fully listed once the disclosure is opened, in full, exactly as before -
+   filtering by content shape would risk misclassifying a genuinely missed transaction as
+   "probably just a header," which this app's own real-books-corruption standard rules out. */
 .skipped-note {
   font-size: 0.88rem;
+  color: var(--muted);
+  margin-top: 1rem;
+}
+
+.skipped-note summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.skipped-note ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.skipped-note li {
+  margin-bottom: 0.3rem;
+  word-break: break-word;
+}
+
+.warning-note {
+  font-size: 0.88rem;
   color: var(--danger);
+}
+
+.totals-line {
+  font-size: 0.92rem;
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .confirm-label {
