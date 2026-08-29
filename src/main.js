@@ -3,6 +3,7 @@ import { parseStatement } from './parsers/index.js';
 import { transactionsToCsv } from './export/csv.js';
 import { transactionsToXeroCsv } from './export/xeroCsv.js';
 import { transactionsToQbo } from './export/qbo.js';
+import { validateAmount } from './reviewValidation.js';
 
 // `bom: true` on a format prepends a UTF-8 byte-order-mark (the 3 bytes EF BB BF, written here
 // as the single character U+FEFF) to the exported file. Excel's own CSV-opening behavior - the
@@ -59,16 +60,9 @@ function escapeAttr(value) {
   return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
-// A blank or unparseable Amount field must never silently become a fabricated 0 in the
-// exported data - that's a real transaction quietly zeroed out with no warning, the exact
-// "real-books-corruption" failure mode the review-before-export step exists to prevent.
-function isAmountInputValid(input) {
-  return input.value.trim() !== '' && !Number.isNaN(parseFloat(input.value));
-}
-
 function updateExportButtonState() {
   const anyInvalidAmount = [...reviewTbody.querySelectorAll('input[data-field="amount"]')].some(
-    (input) => !isAmountInputValid(input)
+    (input) => !validateAmount(input.value)
   );
   amountWarning.hidden = !anyInvalidAmount;
   exportButton.disabled = !confirmCheckbox.checked || currentTransactions.length === 0 || anyInvalidAmount;
@@ -82,7 +76,10 @@ function renderReview() {
     row.innerHTML = `
       <td><input type="text" data-field="date" value="${escapeAttr(tx.date)}"></td>
       <td><input type="text" data-field="description" value="${escapeAttr(tx.description)}"></td>
-      <td><input type="number" step="0.01" data-field="amount" value="${tx.amount}"></td>
+      <td>
+        <input type="number" step="0.01" data-field="amount" value="${tx.amount}">
+        <span class="field-error" hidden>Enter a number</span>
+      </td>
       <td><button type="button" data-action="remove">Remove</button></td>
     `;
 
@@ -90,8 +87,12 @@ function renderReview() {
       input.addEventListener('input', () => {
         const field = input.dataset.field;
         if (field === 'amount') {
-          const valid = isAmountInputValid(input);
+          // A full-string check, not just "does it parse": partial garbage like "12abc" would
+          // otherwise silently truncate to 12 via parseFloat rather than being flagged.
+          const valid = validateAmount(input.value);
           input.classList.toggle('amount-invalid', !valid);
+          const errorSpan = input.nextElementSibling;
+          if (errorSpan) errorSpan.hidden = valid;
           // Only write a real, parsed value into the transaction - never a guessed 0. An
           // invalid/empty field leaves the transaction's last known valid amount untouched
           // internally; updateExportButtonState() below is what actually blocks export while
@@ -101,6 +102,11 @@ function renderReview() {
           }
         } else {
           currentTransactions[index][field] = input.value;
+        }
+        // Any edit after the reviewer has confirmed invalidates that confirmation - it attested
+        // to rows as they stood at that moment, not to whatever they get edited into next.
+        if (confirmCheckbox.checked) {
+          confirmCheckbox.checked = false;
         }
         updateExportButtonState();
       });
