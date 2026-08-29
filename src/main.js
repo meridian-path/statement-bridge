@@ -16,6 +16,11 @@ import { formatCurrencyDisplay, computeTotals } from './reviewFormatting.js';
 // `CHARSET:1252` (see qbo.js) - prepending a UTF-8 BOM there would contradict that declared
 // encoding and risk breaking QuickBooks' own parsing, a separate concern from Excel's CSV-only
 // BOM-detection behavior.
+// `fileSuffix` disambiguates two formats that would otherwise download an identical filename:
+// csv and xero both use the plain ".csv" extension, so exporting the same statement as both in
+// one session previously produced two files literally named "statement.csv" with no way to
+// tell them apart afterward (a fresh download either silently overwrites the first, or the
+// browser appends its own "(1)" - either way, not something the user chose or can rely on).
 const EXPORT_FORMATS = {
   csv: {
     extension: 'csv',
@@ -25,6 +30,7 @@ const EXPORT_FORMATS = {
   },
   xero: {
     extension: 'csv',
+    fileSuffix: 'xero',
     mimeType: 'text/csv;charset=utf-8;',
     build: (transactions) => transactionsToXeroCsv(transactions),
     bom: true,
@@ -184,9 +190,17 @@ exportButton.addEventListener('click', () => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${sourceFileName}.${format.extension}`;
+  const suffix = format.fileSuffix ? `.${format.fileSuffix}` : '';
+  const filename = `${sourceFileName}${suffix}.${format.extension}`;
+  link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+  // The click above triggers a file download with no on-page response of its own - a user
+  // handling real financial data who clicks and sees nothing happen reads that as breakage,
+  // and some will click again and get a duplicate download. This doubles as a receipt: what
+  // was exported, how many rows, and the exact filename to look for.
+  const rowCount = currentTransactions.length;
+  setStatus(`Exported ${rowCount} row${rowCount === 1 ? '' : 's'} to ${filename}. Check your downloads folder.`);
 });
 
 async function handleFile(file) {

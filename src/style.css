@@ -247,6 +247,11 @@ p {
   flex-wrap: wrap;
 }
 
+.format-help {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+}
+
 .export-format-label {
   display: flex;
   align-items: center;
