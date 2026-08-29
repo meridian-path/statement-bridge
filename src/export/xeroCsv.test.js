@@ -32,4 +32,26 @@ describe('transactionsToXeroCsv', () => {
     });
     expect(csv).toContain('"ACME, INC"');
   });
+
+  it('guards against CSV/formula injection in the description', () => {
+    const csv = transactionsToXeroCsv([{ date: '1/20/2026', description: '=1+1', amount: 5 }], {
+      referenceDate: REFERENCE,
+    });
+    expect(csv).toContain("01/20/2026,'=1+1,5.00");
+  });
+
+  it('guards against CSV/formula injection in the date fallback path (an unparseable date passes straight through otherwise)', () => {
+    const csv = transactionsToXeroCsv([{ date: '=1+1', description: 'Fee', amount: -5 }], {
+      referenceDate: REFERENCE,
+    });
+    expect(csv).toContain("'=1+1,Fee,-5.00");
+  });
+
+  it('never neutralizes the Amount column - a real negative amount must stay a plain, sum-able number, never text', () => {
+    const csv = transactionsToXeroCsv([{ date: '1/21/2026', description: 'Debit Card Purchase', amount: -42.99 }], {
+      referenceDate: REFERENCE,
+    });
+    expect(csv).toContain('Debit Card Purchase,-42.99');
+    expect(csv).not.toContain("'-42.99");
+  });
 });
