@@ -41,6 +41,7 @@ const statusEl = document.getElementById('status');
 const reviewSection = document.getElementById('review');
 const reviewTbody = document.getElementById('review-tbody');
 const skippedNote = document.getElementById('skipped-note');
+const amountWarning = document.getElementById('amount-warning');
 const confirmCheckbox = document.getElementById('confirm-reviewed');
 const exportFormatSelect = document.getElementById('export-format');
 const exportButton = document.getElementById('export-btn');
@@ -58,6 +59,21 @@ function escapeAttr(value) {
   return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
+// A blank or unparseable Amount field must never silently become a fabricated 0 in the
+// exported data - that's a real transaction quietly zeroed out with no warning, the exact
+// "real-books-corruption" failure mode the review-before-export step exists to prevent.
+function isAmountInputValid(input) {
+  return input.value.trim() !== '' && !Number.isNaN(parseFloat(input.value));
+}
+
+function updateExportButtonState() {
+  const anyInvalidAmount = [...reviewTbody.querySelectorAll('input[data-field="amount"]')].some(
+    (input) => !isAmountInputValid(input)
+  );
+  amountWarning.hidden = !anyInvalidAmount;
+  exportButton.disabled = !confirmCheckbox.checked || currentTransactions.length === 0 || anyInvalidAmount;
+}
+
 function renderReview() {
   reviewTbody.innerHTML = '';
 
@@ -73,8 +89,20 @@ function renderReview() {
     row.querySelectorAll('input[data-field]').forEach((input) => {
       input.addEventListener('input', () => {
         const field = input.dataset.field;
-        currentTransactions[index][field] =
-          field === 'amount' ? parseFloat(input.value) || 0 : input.value;
+        if (field === 'amount') {
+          const valid = isAmountInputValid(input);
+          input.classList.toggle('amount-invalid', !valid);
+          // Only write a real, parsed value into the transaction - never a guessed 0. An
+          // invalid/empty field leaves the transaction's last known valid amount untouched
+          // internally; updateExportButtonState() below is what actually blocks export while
+          // this is true, not a silently-corrupted amount.
+          if (valid) {
+            currentTransactions[index].amount = parseFloat(input.value);
+          }
+        } else {
+          currentTransactions[index][field] = input.value;
+        }
+        updateExportButtonState();
       });
     });
 
@@ -97,12 +125,10 @@ function renderReview() {
 
   reviewSection.hidden = currentTransactions.length === 0;
   confirmCheckbox.checked = false;
-  exportButton.disabled = true;
+  updateExportButtonState();
 }
 
-confirmCheckbox.addEventListener('change', () => {
-  exportButton.disabled = !confirmCheckbox.checked || currentTransactions.length === 0;
-});
+confirmCheckbox.addEventListener('change', updateExportButtonState);
 
 exportButton.addEventListener('click', () => {
   const format = EXPORT_FORMATS[exportFormatSelect.value] || EXPORT_FORMATS.csv;

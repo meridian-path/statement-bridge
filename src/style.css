@@ -137,6 +137,12 @@ p {
   font: inherit;
 }
 
+#review-table input.amount-invalid {
+  border-color: var(--danger);
+  outline: 1px solid var(--danger);
+  outline-offset: -1px;
+}
+
 .skipped-note {
   font-size: 0.88rem;
   color: var(--danger);
