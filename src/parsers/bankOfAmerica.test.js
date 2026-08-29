@@ -61,11 +61,19 @@ describe('bank of america parser', () => {
       { date: '07/11/12', description: 'Deposit Bank of America ATM Santa Monica, CA', amount: 500 },
       { date: '07/15/12', description: 'Payroll Universal Millen Des ID:36070500010416x Indn: Bir, David Co ID:9002350481', amount: 1200 },
       { date: '07/05/12', description: '99991', amount: -217 },
-      { date: '07/02/12', description: '07/02 Elements Andover -', amount: -87.33 },
-      { date: '07/05/12', description: '07/05 Bank of America ATM / US Gas Remote Salem #0000004012 -', amount: -250 },
-      { date: '07/19/12', description: '07/19 Best Buy Plaistow #000859825 -', amount: -2193.44 },
-      { date: '07/06/12', description: 'AAA Northern New England -', amount: -300 },
-      { date: '07/10/12', description: 'Overdraft fee -', amount: -35 },
+      { date: '07/02/12', description: '07/02 Elements Andover', amount: -87.33 },
+      { date: '07/05/12', description: '07/05 Bank of America ATM / US Gas Remote Salem #0000004012', amount: -250 },
+      { date: '07/19/12', description: '07/19 Best Buy Plaistow #000859825', amount: -2193.44 },
+      { date: '07/06/12', description: 'AAA Northern New England', amount: -300 },
+      { date: '07/10/12', description: 'Overdraft fee', amount: -35 },
     ]);
+  });
+
+  it('strips the redundant standalone "-" Bank of America prints before a debit amount, rather than leaving it dangling on the description (confirmed via a real hands-on browser check against the official guide PDF: none of the 8 debit rows above should end in a bare "-")', () => {
+    const { transactions } = parse(SAMPLE_STATEMENT);
+
+    for (const t of transactions) {
+      expect(t.description.endsWith('-')).toBe(false);
+    }
   });
 });
