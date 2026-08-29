@@ -22,6 +22,20 @@ Date Description Amount Ending Daily Balance
 01/06 Purchase authorized on 01/05 TARGET 55.12 1,794.88
 `;
 
+const US_BANK_SAMPLE = `
+U.S. Bank
+Deposits/Credits
+Date Description Amount
+01/03 Direct Deposit EMPLOYER LLC 2,100.00
+`;
+
+const PNC_SAMPLE = `
+PNC Bank
+Deposits and Other Additions
+Date Description Amount
+01/02 Direct Deposit PAYROLL INC 1,975.50
+`;
+
 const UNRECOGNIZED_BANK_SAMPLE = '01/15 AMAZON.COM PURCHASE -42.99';
 
 describe('parseStatement registry', () => {
@@ -46,6 +60,22 @@ describe('parseStatement registry', () => {
     expect(result.matchedBank).toBe('Wells Fargo');
     expect(result.transactions).toEqual([
       { date: '01/06', description: 'Purchase authorized on 01/05 TARGET', amount: -55.12 },
+    ]);
+  });
+
+  it('routes a U.S. Bank-signature statement to the U.S. Bank parser', () => {
+    const result = parseStatement(US_BANK_SAMPLE);
+    expect(result.matchedBank).toBe('U.S. Bank');
+    expect(result.transactions).toEqual([
+      { date: '01/03', description: 'Direct Deposit EMPLOYER LLC', amount: 2100 },
+    ]);
+  });
+
+  it('routes a PNC-signature statement to the PNC parser', () => {
+    const result = parseStatement(PNC_SAMPLE);
+    expect(result.matchedBank).toBe('PNC');
+    expect(result.transactions).toEqual([
+      { date: '01/02', description: 'Direct Deposit PAYROLL INC', amount: 1975.5 },
     ]);
   });
 
