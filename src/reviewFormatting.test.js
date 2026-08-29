@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCurrencyDisplay, computeTotals } from './reviewFormatting.js';
+import { formatCurrencyDisplay, computeTotals, buildFieldLabel, buildRemoveLabel } from './reviewFormatting.js';
 
 describe('formatCurrencyDisplay', () => {
   it('formats a positive amount with a leading dollar sign and two decimals', () => {
@@ -52,5 +52,33 @@ describe('computeTotals', () => {
     expect(totals.deposits).toBe(0);
     expect(totals.withdrawals).toBe(0);
     expect(totals.count).toBe(1);
+  });
+});
+
+describe('buildFieldLabel', () => {
+  it('names the field plus enough row identity to tell rows apart', () => {
+    const tx = { date: '01/12/2023', description: 'Check Card Purchase', amount: -33.82 };
+    expect(buildFieldLabel('Date', tx)).toBe('Date for Check Card Purchase on 01/12/2023');
+    expect(buildFieldLabel('Description', tx)).toBe('Description for Check Card Purchase on 01/12/2023');
+    expect(buildFieldLabel('Amount', tx)).toBe('Amount for Check Card Purchase on 01/12/2023');
+  });
+
+  it('does not read from any live-edited value beyond what is passed in - callers control staleness by which tx they pass', () => {
+    const original = { date: '01/12/2023', description: 'Check Card Purchase', amount: -33.82 };
+    const label = buildFieldLabel('Date', original);
+    original.description = 'edited later';
+    expect(label).toBe('Date for Check Card Purchase on 01/12/2023');
+  });
+});
+
+describe('buildRemoveLabel', () => {
+  it('uses a 1-based row number plus description and amount', () => {
+    const tx = { date: '01/12/2023', description: 'Check Card Purchase', amount: -33.82 };
+    expect(buildRemoveLabel(2, tx)).toBe('Remove row 3: Check Card Purchase, -33.82');
+  });
+
+  it('uses row 1 for index 0, not row 0', () => {
+    const tx = { date: '01/02/2026', description: 'Direct Deposit', amount: 1850 };
+    expect(buildRemoveLabel(0, tx)).toBe('Remove row 1: Direct Deposit, 1850');
   });
 });

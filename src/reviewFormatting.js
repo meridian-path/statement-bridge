@@ -33,3 +33,21 @@ export function computeTotals(transactions) {
     withdrawals,
   };
 }
+
+// Builds an accessible label for one review-table field, naming the field plus enough row
+// identity (description + date) for a screen reader user to tell rows apart - without this, a
+// bare <input> announces as "edit text" with no indication of which field or which transaction,
+// 69+ times on a real statement (3 fields x 23 rows). Deliberately computed once from the row's
+// own values at render time, not re-derived as the user edits - the label a screen reader
+// announced when tabbing into the field shouldn't shift mid-edit just because its own value is
+// changing.
+export function buildFieldLabel(fieldName, tx) {
+  return `${fieldName} for ${tx.description} on ${tx.date}`;
+}
+
+// Builds an accessible label for one row's Remove button - 23 identical bare "Remove" buttons
+// with no way to tell them apart is the same problem one level up. Uses a 1-based row number
+// (screen reader users, like sighted users, count rows starting at 1, not 0).
+export function buildRemoveLabel(index, tx) {
+  return `Remove row ${index + 1}: ${tx.description}, ${tx.amount}`;
+}
