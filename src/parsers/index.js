@@ -4,13 +4,14 @@ import * as bankOfAmerica from './bankOfAmerica.js';
 import * as wellsFargo from './wellsFargo.js';
 import * as usBank from './usBank.js';
 import * as pnc from './pnc.js';
+import * as ally from './ally.js';
 
 // Tried in order; the first bank whose detection signature matches wins. Chase, Bank of
-// America, Wells Fargo, U.S. Bank, and PNC have a dedicated parser so far - every other bank
-// (and any statement none of these match) falls through to the generic date/description/amount
-// fallback below. The rest of the 10-15-bank MVP target list is follow-up work, not covered
-// here yet.
-const BANK_PARSERS = [chase, bankOfAmerica, wellsFargo, usBank, pnc];
+// America, Wells Fargo, U.S. Bank, PNC, and Ally have a dedicated parser so far - every other
+// bank (and any statement none of these match) falls through to the generic date/description/
+// amount fallback below. The rest of the 10-15-bank MVP target list is follow-up work, not
+// covered here yet.
+const BANK_PARSERS = [chase, bankOfAmerica, wellsFargo, usBank, pnc, ally];
 
 /**
  * @returns {{ transactions: {date:string,description:string,amount:number}[], skipped: string[], matchedBank: string|null }}

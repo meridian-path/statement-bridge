@@ -2,7 +2,7 @@
   "name": "statement-bridge",
   "version": "0.1.0",
   "private": true,
-  "description": "Bank statement PDF to CSV/QBO/Xero converter. Runs entirely client-side, no upload, no account. Dedicated parsers for Chase, Bank of America, Wells Fargo, U.S. Bank, and PNC, plus a generic fallback for other banks.",
+  "description": "Bank statement PDF to CSV/QBO/Xero converter. Runs entirely client-side, no upload, no account. Dedicated parsers for Chase, Bank of America, Wells Fargo, U.S. Bank, PNC, and Ally, plus a generic fallback for other banks.",
   "type": "module",
   "scripts": {
     "dev": "vite",
